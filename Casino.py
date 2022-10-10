@@ -7,6 +7,14 @@ from random import randint, random
 db = sqlite3.connect ('CasinoData.db')  # DataBase
 cdb = db.cursor()                       # Cursor of DB
 
+                                        # Create table
+cdb.execute ("""CREATE TABLE IF NOT EXISTS users (
+    login TEXT (30),
+    password TEXT (16),
+    cash BIGINT (15)                          
+)""")
+db.commit()
+
 #########################################################
 # FUNCSION
 
@@ -14,7 +22,7 @@ def registrate (user_login, user_pas):
     print ('Регистрация:\n')
     cdb.execute (f"SELECT login FROM users WHERE login = '{user_login}'")
     if cdb.fetchone () is None:
-        cdb.execute (f"INSERT INTO users VALUES (?, ?, ?)", (user_login, user_pas, 0))
+        cdb.execute (f"INSERT INTO users VALUES (?, ?, ?)", (user_login, user_pas, 100))
         db.commit()
     else:
         print ('Вы уже зарегистрированы!')
@@ -35,48 +43,6 @@ def show_all_user():
 
 #########################################################
 
-def initialization():
-    print ('Авторизация:\n')
-    probs = 3
-    while probs >= 0:
-        user_login = input_set ('Log in: ')
-        if user_login in ['setings', 'seting', 'settings', 'setting']: 
-            setings()
-            quit()
-        cdb.execute (f"SELECT login FROM users WHERE login = '{user_login}'")
-        if cdb.fetchone() is None:
-            print ("Нужна регистрация!")
-            print ("Желаете зарегистрироваться сейчас? Y/N: ")
-            if input_set () in ['Y', 'y', 'У', 'у']:
-                while True:
-                    login = input_set ('Login (>30 символов): ')
-                    if len(login) > 30: 
-                        print ('Введеное кол-во символов превышает лимит')
-                        continue
-                    password = input_set ('Password (>16 символов): ')
-                    if len(password) > 16: 
-                        print ('Введеное кол-во символов превышает лимит')
-                        continue
-                    registrate(login, password)
-                    print ("Вы успешно зарегистрировались!")
-                    quit ()
-            else:   print ("Для продолжения, нужно зарегистрироваться!"), quit()
-        user_pas = input_set ('Password: ')
-        if user_pas in ['setings', 'seting', 'settings', 'setting']: 
-            setings()
-            quit()
-        cdb.execute (f"SELECT login, password FROM users WHERE login = '{user_login}' AND password = '{user_pas}'")
-        if cdb.fetchone() is None:
-            if probs == 0:
-                print ("К сожалению, вы заблокированы.")
-                quit()
-            else:
-                print (f'Неверный пароль! У вас осталось {probs} попыток')
-            probs -= 1
-        else:
-            return (user_login, user_pas)
-
-#########################################################
 
 def prob_init (user_login):
     cdb.execute (f"SELECT * FROM users WHERE login = '{user_login}'")
@@ -146,7 +112,51 @@ def input_set(text=""):
     if i in ['setings', 'seting', 'settings', 'setting']:
         setings()
         quit()
+    elif i == "": 
+        print ("Вы не ввели никаких данных!")
+        input_set ()
     else: return i
+
+#########################################################
+
+def initialization():
+    print ('Авторизация:\n')
+    probs = 3
+    while probs >= 0:
+        user_login = input_set()
+        if user_login in ['setings', 'seting', 'settings', 'setting']: 
+            setings()
+            quit()
+        cdb.execute (f"SELECT login FROM users WHERE login = '{user_login}'")
+        if cdb.fetchone() is None:
+            print ("Нужна регистрация!")
+            print ("Желаете зарегистрироваться сейчас? Y/N: ")
+            if input_set () in ['Y', 'y', 'У', 'у']:
+                while True:
+                    login = input_set ('Login (>30 символов): ')
+                    if len(login) > 30: 
+                        print ('Введеное кол-во символов превышает лимит')
+                        continue
+                    password = input_set ('Password (>16 символов): ')
+                    if len(password) > 16: 
+                        print ('Введеное кол-во символов превышает лимит')
+                        continue
+                    registrate(login, password)
+                    print ("Вы успешно зарегистрировались!\n")
+                    play()
+                    quit ()
+            else:   print ("Для продолжения, нужно зарегистрироваться!"), quit()
+        user_pas = input_set ('Password: ')
+        cdb.execute (f"SELECT login, password FROM users WHERE login = '{user_login}' AND password = '{user_pas}'")
+        if cdb.fetchone() is None:
+            if probs == 0:
+                print ("К сожалению, вы заблокированы.")
+                quit()
+            else:
+                print (f'Неверный пароль! У вас осталось {probs} попыток')
+            probs -= 1
+        else:
+            return (user_login, user_pas)
 
 #########################################################
 
@@ -328,20 +338,13 @@ def setings ():
         if word == 'regis':    return sets(input ('Log in: '), input ('Password: '))
         else:   return sets() 
     elif word in ['rulet', 'slotmach', 'random', 'table', 'plays', 'zero', 'delet', 'show', 'cashup', 'probin', 'betcheck']: return sets(input ('Log in: '))
-    else: return setings()
+    return setings()
 
 #########################################################
 # MAIN PROGRAM
 
 
 def main():
-                                            # Create table
-    cdb.execute ("""CREATE TABLE IF NOT EXISTS users (
-        id INTEGER PRUMARY KEY
-        login TEXT (30),
-        password TEXT (16),
-        cash BIGINT (15)                          
-    )""")
     play()
     cdb.close()
     db.close()
