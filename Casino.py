@@ -345,9 +345,11 @@ def setings ():
 
 
 def main():
-    play()
-    cdb.close()
-    db.close()
+    try:
+        play()
+    finally:
+        cdb.close()
+        db.close()
 
 main()
 
